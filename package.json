@@ -7,10 +7,14 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "build": "tsgo -p tsconfig.json"
+    "build": "tsgo -p tsconfig.json",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check ."
   },
   "devDependencies": {
     "@mariozechner/pi-coding-agent": "^0.70.2",
-    "@typescript/native-preview": "^7.0.0-dev.20260426.1"
+    "@typescript/native-preview": "^7.0.0-dev.20260426.1",
+    "oxfmt": "^0.47.0",
+    "oxlint": "^1.62.0"
   }
 }

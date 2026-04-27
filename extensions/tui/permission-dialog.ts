@@ -145,8 +145,7 @@ export class PermissionDialog {
     // then blank those lines from the bottom of the full render.
     let inputLineCount = 0;
     if (this.selectedIndex === 0) {
-      inputLineCount =
-        this.inputLabel.render(width).length + this.input.render(width).length;
+      inputLineCount = this.inputLabel.render(width).length + this.input.render(width).length;
     }
 
     // Insert buttons before bottom border (last 2 lines are input + border)

@@ -24,11 +24,15 @@ The extension subscribes to `pi.on("tool_call", ...)` and returns `ToolCallEvent
 Key types from `@mariozechner/pi-coding-agent`: `ExtensionAPI`, `ExtensionContext`, `ToolCallEvent`, `ToolCallEventResult`, `DynamicBorder`.
 Key types from `@mariozechner/pi-tui`: `Container`, `Input`, `Key`, `Text`, `matchesKey`, `truncateToWidth`.
 
-## Build
+## Build & Format
 
 ```bash
 npm run build   # tsgo type-check only (noEmit: true)
+npm run format  # oxfmt — write formatted code in place
+npm run format:check  # oxfmt — check formatting (CI-friendly)
 ```
+
+The project uses [oxfmt](https://oxc.rs/docs/guide/usage/formatter/) for code formatting, with config in `.oxfmtrc.json`.
 
 The extension is loaded by pi via jiti at runtime, so no build step is required for interactive use. The build command is a type-check gate.
 
