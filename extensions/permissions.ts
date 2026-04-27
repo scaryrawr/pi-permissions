@@ -7,36 +7,68 @@ import type {
 import { realpath } from "node:fs/promises";
 import { relative } from "node:path";
 import { isSafeCommand } from "./utils/bash.js";
+import { PermissionDialog } from "./tui/permission-dialog.js";
+import { truncateToWidth } from "@mariozechner/pi-tui";
 
 const READONLY_TOOLS = ["read", "grep", "find", "ls"];
+
+/** Format tool input for display */
+function formatToolInput(toolName: string, input: Record<string, unknown>): string {
+  switch (toolName) {
+    case "edit":
+    case "write": {
+      const path = input.path as string | undefined;
+      return path ? `path: ${path}` : "no path";
+    }
+    case "bash": {
+      const cmd = input.command as string | undefined;
+      return cmd ? truncateToWidth(cmd, 60) || "(empty command)" : "(no command)";
+    }
+    case "read": {
+      const path = input.path as string | undefined;
+      return path ? `path: ${path}` : "no path";
+    }
+    case "grep": {
+      const pattern = input.pattern as string | undefined;
+      const path = input.path as string | undefined;
+      return `${pattern || "(no pattern)"}${path ? ` in ${path}` : ""}`;
+    }
+    case "find": {
+      const path = input.path as string | undefined;
+      return path ? `path: ${path}` : "no path";
+    }
+    case "ls": {
+      const path = input.path as string | undefined;
+      return path ? `path: ${path}` : "(current dir)";
+    }
+    default:
+      return JSON.stringify(input);
+  }
+}
 
 async function handleToolCall(
   event: ToolCallEvent,
   ctx: ExtensionContext,
 ): Promise<ToolCallEventResult> {
   if (READONLY_TOOLS.includes(event.toolName)) {
-    return {
-      block: false,
-    };
+    return { block: false };
   }
 
   switch (event.toolName) {
     case "edit":
-    case "write":
-      {
-        const target_path = await realpath(event.input.path as string);
-        const cwd = await realpath(ctx.cwd);
-        if (!relative(cwd, target_path).startsWith("..")) {
-          return {
-            block: false,
-          };
-        }
+    case "write": {
+      const target_path = await realpath(event.input.path as string);
+      const cwd = await realpath(ctx.cwd);
+      if (!relative(cwd, target_path).startsWith("..")) {
+        return { block: false };
       }
       break;
+    }
     case "bash": {
       if (isSafeCommand(event.input.command as string)) {
         return { block: false };
       }
+      break;
     }
   }
 
@@ -47,23 +79,41 @@ async function handleToolCall(
     };
   }
 
-  let message: string;
+  // Build the input description for display
+  let inputDescription: string;
   switch (event.toolName) {
     case "edit":
     case "write":
-      message = `⚠️ Writing outside of cwd ${event.input.path}`;
+      inputDescription = `⚠️ Writing outside of cwd: ${formatToolInput(event.toolName, event.input)}`;
       break;
     case "bash":
-      message = `⚠️ Bash tool call`;
+      inputDescription = `⚠️ Potentially destructive bash command:\n   ${formatToolInput(event.toolName, event.input)}`;
       break;
     default:
-      message = `⚠️ Unknown Tool call: ${event.toolName}`;
+      inputDescription = `⚠️ Unknown tool call: ${event.toolName}`;
   }
 
-  const result = await ctx.ui.select(message, ["Allow", "Block"]);
-  return {
-    block: result === "Block",
-  };
+  // Show custom permission dialog using the factory pattern
+  return ctx.ui.custom<ToolCallEventResult>(
+    (tui, theme, _kb, done) => {
+      const dialog = new PermissionDialog(event.toolName, inputDescription, {
+        fg: (color, text) => theme.fg(color, text),
+        bg: (color, text) => theme.bg(color, text),
+        bold: (text) => theme.bold(text),
+      });
+
+      dialog.onDone = (toolResult: ToolCallEventResult) => {
+        done(toolResult);
+      };
+
+      return {
+        render: (width: number) => dialog.render(width),
+        invalidate: () => dialog.invalidate(),
+        handleInput: (data: string) => dialog.handleInput(data, tui),
+      };
+    },
+    { overlay: false, overlayOptions: { anchor: "bottom-center" } },
+  );
 }
 
 export default async function (pi: ExtensionAPI) {
