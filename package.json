@@ -1,0 +1,16 @@
+{
+  "name": "pi-permissions",
+  "version": "1.0.0",
+  "description": "Permissions for pi agent",
+  "license": "MIT",
+  "author": "Mike Wallio",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsgo -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "^0.70.2",
+    "@typescript/native-preview": "^7.0.0-dev.20260426.1"
+  }
+}
