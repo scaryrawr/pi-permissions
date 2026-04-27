@@ -56,7 +56,7 @@ export class PermissionDialog {
 
     // Navigation hint
     this.container.addChild(
-      new Text(this.#theme.fg("dim", "↑↓ navigate • enter to confirm • esc cancel"), 1, 0),
+      new Text(this.#theme.fg("dim", "↑↓ navigate • enter to confirm • esc/ctrl+c cancel"), 1, 0),
     );
 
     // Spacer
@@ -73,8 +73,8 @@ export class PermissionDialog {
   }
 
   handleInput(data: string, tui: { requestRender: () => void }): void {
-    // Handle escape from any selection state
-    if (matchesKey(data, Key.escape)) {
+    // Handle escape or ctrl+c from any selection state
+    if (matchesKey(data, Key.escape) || matchesKey(data, Key.ctrl("c"))) {
       const cancelResult: ToolCallEventResult = {
         block: true,
         reason: "User cancelled the permission request.",
