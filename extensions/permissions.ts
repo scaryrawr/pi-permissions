@@ -54,7 +54,7 @@ async function handleToolCall(
       message = `⚠️ Writing outside of cwd ${event.input.path}`;
       break;
     case "bash":
-      message = `⚠️ Bash tool call: \n\n${event.input.command}`;
+      message = `⚠️ Bash tool call`;
       break;
     default:
       message = `⚠️ Unknown Tool call: ${event.toolName}`;
