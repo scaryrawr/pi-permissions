@@ -86,7 +86,6 @@ export class PermissionDialog {
     // Navigation
     if (matchesKey(data, Key.up) || matchesKey(data, Key.left)) {
       this.selectedIndex = 0;
-      this.input.focused = false;
       this.invalidate();
       tui.requestRender();
       return;
@@ -139,20 +138,30 @@ export class PermissionDialog {
     const approveLine = renderButtonLine("✓ Approve", "success", this.selectedIndex === 0);
     const blockLine = renderButtonLine("✗ Block", "error", this.selectedIndex === 1);
 
+    // When Approve is selected, we need to blank the input area lines while
+    // preserving the total line count for stable layout. To avoid fragile
+    // index arithmetic (e.g., lines.length - N), we render the input
+    // components separately first to know exactly how many lines they produce,
+    // then blank those lines from the bottom of the full render.
+    let inputLineCount = 0;
+    if (this.selectedIndex === 0) {
+      inputLineCount =
+        this.inputLabel.render(width).length + this.input.render(width).length;
+    }
+
     // Insert buttons before bottom border (last 2 lines are input + border)
     const lines = this.container.render(width);
     const insertIndex = Math.max(0, lines.length - 2);
     lines.splice(insertIndex, 0, approveLine, blockLine);
 
-    // When Approve is selected, replace the input area lines with empty lines
-    // so the layout stays stable (same total line count).
-    // Input label + input are at lines.length - 4 and lines.length - 3
-    // (after button insertion: input, approve, block, bottom border)
-    if (this.selectedIndex === 0) {
-      const inputLabelIdx = lines.length - 4;
-      const inputIdx = lines.length - 3;
-      lines[inputLabelIdx] = "";
-      lines[inputIdx] = "";
+    // Blank the input area lines when Approve is selected.
+    // They sit right before the buttons, so starting from lines.length - 2
+    // (buttons start) and going back by inputLineCount gives us the exact range.
+    if (this.selectedIndex === 0 && inputLineCount > 0) {
+      const blankStart = Math.max(0, lines.length - 2 - inputLineCount);
+      for (let i = blankStart; i < blankStart + inputLineCount; i++) {
+        lines[i] = "";
+      }
     }
 
     this.cachedWidth = width;
@@ -163,9 +172,5 @@ export class PermissionDialog {
   invalidate(): void {
     this.cachedWidth = undefined;
     this.cachedLines = undefined;
-  }
-
-  getResult(): ToolCallEventResult | null {
-    return null; // no longer needed - results go through onDone
   }
 }
