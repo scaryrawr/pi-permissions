@@ -90,6 +90,7 @@ export class PermissionDialog {
       tui.requestRender();
       return;
     }
+
     if (matchesKey(data, Key.down) || matchesKey(data, Key.right)) {
       this.selectedIndex = 1;
       this.input.focused = true;
@@ -139,8 +140,7 @@ export class PermissionDialog {
     const blockLine = renderButtonLine("✗ Block", "error", this.selectedIndex === 1);
 
     // When Approve is selected, we need to blank the input area lines while
-    // preserving the total line count for stable layout. To avoid fragile
-    // index arithmetic (e.g., lines.length - N), we render the input
+    // preserving the total line count for stable layout. We render the input
     // components separately first to know exactly how many lines they produce,
     // then blank those lines from the bottom of the full render.
     let inputLineCount = 0;
@@ -150,18 +150,19 @@ export class PermissionDialog {
 
     // Insert buttons before bottom border (last 2 lines are input + border)
     const lines = this.container.render(width);
-    const insertIndex = Math.max(0, lines.length - 2);
-    lines.splice(insertIndex, 0, approveLine, blockLine);
 
     // Blank the input area lines when Approve is selected.
-    // They sit right before the buttons, so starting from lines.length - 2
-    // (buttons start) and going back by inputLineCount gives us the exact range.
+    // Do this BEFORE splicing in the buttons, so the indices are stable
+    // and the input lines remain contiguous.
     if (this.selectedIndex === 0 && inputLineCount > 0) {
-      const blankStart = Math.max(0, lines.length - 2 - inputLineCount);
+      const blankStart = Math.max(0, lines.length - 1 - inputLineCount);
       for (let i = blankStart; i < blankStart + inputLineCount; i++) {
         lines[i] = "";
       }
     }
+
+    const insertIndex = Math.max(0, lines.length - 1);
+    lines.splice(insertIndex, 0, approveLine, blockLine);
 
     this.cachedWidth = width;
     this.cachedLines = lines;
