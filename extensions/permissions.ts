@@ -70,6 +70,9 @@ async function handleToolCall(
       }
       break;
     }
+    default:
+      // custom tools - allow by default for now
+      return { block: false };
   }
 
   if (!ctx.hasUI) {
